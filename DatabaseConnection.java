@@ -2,17 +2,38 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class DatabaseConnection {
-    private static final String URL = "jdbc:sqlite:C:/sqlite/vehicle.db";
+//**************************************
+//Database Connection Class
+//Handles connection to SQLite database
+//**************************************
 
-    public static Connection connect() {
+//database connection class
+public class DatabaseConnection 
+{
+    //database url
+    private static final String URL = "jdbc:sqlite:vehicle.db";
+
+    //connect to database
+    public static Connection connect() 
+    {
+        //connection object
         Connection conn = null;
-        try {
+        
+        try 
+        {
+            //open connection
             conn = DriverManager.getConnection(URL);
+            
+            //success message
             System.out.println("Connected to the database successfully.");
-        } catch (SQLException e) {
+        } 
+        catch(SQLException e) 
+        {
+            //error message
             System.out.println("Connection error: " + e.getMessage());
         }
+        
+        //return connection
         return conn;
     }
 }
