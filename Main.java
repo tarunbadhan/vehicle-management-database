@@ -2,18 +2,30 @@ import java.sql.*;
 import java.util.Scanner;
 import java.time.LocalDate;
 
-public class Main {
+//**************************************
+//Main Class
+//Vehicle Management System
+//**************************************
 
+public class Main 
+{
+    //database url
     static String url = "jdbc:sqlite:vehicle.db";
 
-    public static void main(String[] args) {
+    //main method
+    public static void main(String[] args) 
+    {
+        //setup database
+        setupDatabase(); 
 
-        setupDatabase(); // auto setup
-
+        //scanner for input
         Scanner sc = new Scanner(System.in);
         int choice;
 
-        do {
+        //menu loop
+        do 
+        {
+            //display menu
             System.out.println("\n--- Vehicle Management System ---");
             System.out.println("1. View Vehicles");
             System.out.println("2. Add Vehicle");
@@ -25,16 +37,20 @@ public class Main {
             System.out.println("8. Exit");
             System.out.print("Enter your choice: ");
 
-            while (!sc.hasNextInt()) {
+            //input validation
+            while(!sc.hasNextInt()) 
+            {
                 System.out.println("Invalid input. Enter a number.");
                 sc.next();
             }
 
+            //read choice
             choice = sc.nextInt();
             sc.nextLine();
 
-            switch (choice) {
-
+            //handle menu options
+            switch(choice) 
+            {
                 case 1: viewVehicles(); break;
                 case 2: addVehicle(sc); break;
                 case 3: updateVehicle(sc); break;
@@ -45,60 +61,77 @@ public class Main {
                 case 8: System.out.println("Exiting..."); break;
                 default: System.out.println("Invalid choice.");
             }
+        }while(choice != 8);
 
-        } while (choice != 8);
-
+        //close scanner
         sc.close();
     }
 
-    // ---------- DATABASE SETUP ----------
-    public static void setupDatabase() {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    //----------DATABASE SETUP----------
+    public static void setupDatabase() 
+    {
+        try 
+        {
+            //connect to database
+            Connection conn = DatabaseConnection.connect();
             Statement stmt = conn.createStatement();
 
+            //drop existing tables
             stmt.execute("DROP TABLE IF EXISTS ServiceRecord");
             stmt.execute("DROP TABLE IF EXISTS Vehicle");
             stmt.execute("DROP TABLE IF EXISTS Owner");
 
+            //create tables
             stmt.execute("CREATE TABLE Owner (owner_id INT PRIMARY KEY, full_name TEXT, phone TEXT, email TEXT, address TEXT)");
             stmt.execute("CREATE TABLE Vehicle (vehicle_id INT PRIMARY KEY, owner_id INT, plate_number TEXT, brand TEXT, model TEXT, year INT, color TEXT, FOREIGN KEY(owner_id) REFERENCES Owner(owner_id))");
             stmt.execute("CREATE TABLE ServiceRecord (service_id INT PRIMARY KEY, vehicle_id INT, service_date TEXT, service_type TEXT, cost REAL, notes TEXT, FOREIGN KEY(vehicle_id) REFERENCES Vehicle(vehicle_id))");
 
+            //insert sample owners
             stmt.execute("INSERT INTO Owner VALUES (1,'Tarun','5061112222','tarun@email.com','Saint John')");
             stmt.execute("INSERT INTO Owner VALUES (2,'Alex','5063334444','alex@email.com','Fredericton')");
 
+            //insert sample vehicles
             stmt.execute("INSERT INTO Vehicle VALUES (101,1,'NBX123','Toyota','Corolla',2020,'Black')");
             stmt.execute("INSERT INTO Vehicle VALUES (102,1,'NBY456','Honda','Civic',2022,'White')");
             stmt.execute("INSERT INTO Vehicle VALUES (103,2,'NBZ789','Ford','Escape',2019,'Blue')");
 
+            //insert sample service records
             stmt.execute("INSERT INTO ServiceRecord VALUES (1,101,'2026-03-01','Oil Change',79.99,'Done')");
             stmt.execute("INSERT INTO ServiceRecord VALUES (2,101,'2026-03-15','Brake Check',49.99,'Checked')");
 
+            //close connection
             stmt.close();
             conn.close();
 
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
+            //print error
             System.out.println(e.getMessage());
         }
     }
 
-    // ---------- VEHICLE ----------
-    public static void viewVehicles() {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    //----------VEHICLE METHODS----------
+    public static void viewVehicles() 
+    {
+        try 
+        {
+            //connect and fetch data
+            Connection conn = DatabaseConnection.connect();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT * FROM Vehicle");
     
+            //print heading
             System.out.println("\n--- Vehicles ---");
     
-            // HEADINGS
+            //table headings
             System.out.printf("%-5s %-10s %-10s %-10s %-6s %-10s\n",
                     "ID", "Plate", "Brand", "Model", "Year", "Color");
             System.out.println("--------------------------------------------------------------");
     
-            // DATA
-            while (rs.next()) {
+            //display data
+            while(rs.next()) 
+            {
                 System.out.printf("%-5d %-10s %-10s %-10s %-6d %-10s\n",
                         rs.getInt("vehicle_id"),
                         rs.getString("plate_number"),
@@ -108,37 +141,48 @@ public class Main {
                         rs.getString("color"));
             }
     
+            //close connection
             conn.close();
     
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
 
-    public static void addVehicle(Scanner sc) {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    public static void addVehicle(Scanner sc) 
+    {
+        try 
+        {
+            //connect to database
+            Connection conn = DatabaseConnection.connect();
 
+            //get vehicle id
             System.out.print("Vehicle ID: ");
             int id = sc.nextInt(); sc.nextLine();
 
-            // Show available owners
+            //show owners
             System.out.println("\nAvailable Owners:");
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT * FROM Owner");
             
-            while (rs.next()) {
+            while(rs.next()) 
+            {
                 System.out.println(
                     rs.getInt("owner_id") + " | " +
                     rs.getString("full_name")
                 );
             }
             
+            //get owner id
             System.out.print("Owner ID: ");
             int ownerId = sc.nextInt(); sc.nextLine();
 
+            //generate plate
             String plate = "NB" + id;
 
+            //get details
             System.out.print("Brand: ");
             String brand = sc.nextLine();
 
@@ -151,6 +195,7 @@ public class Main {
             System.out.print("Color: ");
             String color = sc.nextLine();
 
+            //insert vehicle
             PreparedStatement ps = conn.prepareStatement("INSERT INTO Vehicle VALUES (?, ?, ?, ?, ?, ?, ?)");
             ps.setInt(1, id);
             ps.setInt(2, ownerId);
@@ -164,21 +209,28 @@ public class Main {
             System.out.println("Vehicle added.");
 
             conn.close();
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
 
-    public static void updateVehicle(Scanner sc) {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    public static void updateVehicle(Scanner sc) 
+    {
+        try 
+        {
+            //connect to database
+            Connection conn = DatabaseConnection.connect();
 
+            //get id and new color
             System.out.print("Vehicle ID: ");
             int id = sc.nextInt(); sc.nextLine();
 
             System.out.print("New Color: ");
             String color = sc.nextLine();
 
+            //update vehicle
             PreparedStatement ps = conn.prepareStatement("UPDATE Vehicle SET color=? WHERE vehicle_id=?");
             ps.setString(1, color);
             ps.setInt(2, id);
@@ -187,18 +239,25 @@ public class Main {
             System.out.println("Updated.");
 
             conn.close();
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
 
-    public static void deleteVehicle(Scanner sc) {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    public static void deleteVehicle(Scanner sc) 
+    {
+        try 
+        {
+            //connect to database
+            Connection conn = DatabaseConnection.connect();
 
+            //get id
             System.out.print("Vehicle ID: ");
             int id = sc.nextInt(); sc.nextLine();
 
+            //delete vehicle
             PreparedStatement ps = conn.prepareStatement("DELETE FROM Vehicle WHERE vehicle_id=?");
             ps.setInt(1, id);
 
@@ -206,27 +265,33 @@ public class Main {
             System.out.println("Deleted.");
 
             conn.close();
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
 
-    // ---------- OWNER ----------
-    public static void viewOwners() {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    //----------OWNER METHODS----------
+    public static void viewOwners() 
+    {
+        try 
+        {
+            //connect and fetch
+            Connection conn = DatabaseConnection.connect();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT * FROM Owner");
     
             System.out.println("\n--- Owners ---");
     
-            // HEADINGS
+            //table headings
             System.out.printf("%-5s %-15s %-15s %-25s %-15s\n",
                     "ID", "Name", "Phone", "Email", "Address");
             System.out.println("--------------------------------------------------------------------------");
     
-            // DATA
-            while (rs.next()) {
+            //display data
+            while(rs.next()) 
+            {
                 System.out.printf("%-5d %-15s %-15s %-25s %-15s\n",
                         rs.getInt("owner_id"),
                         rs.getString("full_name"),
@@ -237,15 +302,20 @@ public class Main {
     
             conn.close();
     
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
 
-    // ---------- SERVICE ----------
-    public static void viewServiceRecords() {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    //----------SERVICE METHODS----------
+    public static void viewServiceRecords() 
+    {
+        try 
+        {
+            //connect and fetch
+            Connection conn = DatabaseConnection.connect();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT * FROM ServiceRecord");
     
@@ -254,7 +324,9 @@ public class Main {
                     "ID", "Vehicle", "Date", "Service", "Cost", "Notes");
             System.out.println("------------------------------------------------------------------------");
     
-            while (rs.next()) {
+            //display records
+            while(rs.next()) 
+            {
                 System.out.printf("%-5d %-10d %-12s %-15s $%-9.2f %-20s\n",
                         rs.getInt("service_id"),
                         rs.getInt("vehicle_id"),
@@ -267,24 +339,30 @@ public class Main {
             stmt.close();
             conn.close();
     
-        } catch (Exception e) {
+        }
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
     
-    public static void addServiceRecord(Scanner sc) {
-        try {
-            Connection conn = DriverManager.getConnection(url);
+    public static void addServiceRecord(Scanner sc) 
+    {
+        try 
+        {
+            //connect to database
+            Connection conn = DatabaseConnection.connect();
             Statement stmt = conn.createStatement();
     
-            // Show available vehicles
+            //show vehicles
             System.out.println("\nAvailable Vehicles:");
             ResultSet rs = stmt.executeQuery("SELECT * FROM Vehicle");
     
             System.out.printf("%-5s %-10s %-10s %-10s\n", "ID", "Plate", "Brand", "Model");
             System.out.println("------------------------------------------------");
     
-            while (rs.next()) {
+            while(rs.next()) 
+            {
                 System.out.printf("%-5d %-10s %-10s %-10s\n",
                         rs.getInt("vehicle_id"),
                         rs.getString("plate_number"),
@@ -292,23 +370,24 @@ public class Main {
                         rs.getString("model"));
             }
     
-            // Ask for vehicle ID
+            //get vehicle id
             System.out.print("Enter Vehicle ID: ");
             int vehicleId = sc.nextInt();
             sc.nextLine();
     
-            // Validate vehicle exists
+            //validate vehicle
             ResultSet check = stmt.executeQuery(
                     "SELECT * FROM Vehicle WHERE vehicle_id = " + vehicleId
             );
     
-            if (!check.next()) {
+            if(!check.next()) 
+            {
                 System.out.println("Invalid Vehicle ID.");
                 conn.close();
                 return;
             }
     
-            // Show service options
+            //service options
             System.out.println("\nSelect Service Type:");
             System.out.println("1. Oil Change - $79.99");
             System.out.println("2. Brake Check - $49.99");
@@ -322,7 +401,9 @@ public class Main {
             String serviceType = "";
             double cost = 0.0;
     
-            switch (serviceChoice) {
+            //select service
+            switch(serviceChoice) 
+            {
                 case 1:
                     serviceType = "Oil Change";
                     cost = 79.99;
@@ -345,21 +426,22 @@ public class Main {
                     return;
             }
     
-            // Auto-generate service ID
+            //generate service id
             ResultSet idRs = stmt.executeQuery("SELECT MAX(service_id) AS max_id FROM ServiceRecord");
             int newId = 1;
-            if (idRs.next() && idRs.getInt("max_id") != 0) {
+            if(idRs.next() && idRs.getInt("max_id") != 0) 
+            {
                 newId = idRs.getInt("max_id") + 1;
             }
     
-            // Auto-generate current date
+            //current date
             String date = java.time.LocalDate.now().toString();
     
-            // Optional notes
+            //notes input
             System.out.print("Enter Notes: ");
             String notes = sc.nextLine();
     
-            // Insert record
+            //insert record
             PreparedStatement ps = conn.prepareStatement(
                     "INSERT INTO ServiceRecord VALUES (?, ?, ?, ?, ?, ?)"
             );
@@ -382,7 +464,9 @@ public class Main {
             stmt.close();
             conn.close();
     
-        } catch (Exception e) {
+        } 
+        catch(Exception e) 
+        {
             System.out.println(e.getMessage());
         }
     }
