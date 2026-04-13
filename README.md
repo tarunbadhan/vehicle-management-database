@@ -50,5 +50,10 @@ The system initializes with sample owners, vehicles, and service records to demo
 
 ---
 
+## Presentation Video (google drive link):
+[Video Link](https://drive.google.com/file/d/1GBb9ECczGK7orbmunbWgL2EaqvcCBTFx/view?usp=sharing)
+
+---
+
 ## Author
 Tarun Badhan
